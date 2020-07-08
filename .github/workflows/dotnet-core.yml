@@ -19,9 +19,7 @@ jobs:
 
     - name: Build
       run: |
-        pushd Dijkstra
         dotnet publish -c Release --output build
-        popd
         
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
