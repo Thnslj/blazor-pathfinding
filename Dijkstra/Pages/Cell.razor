@@ -1,0 +1,12 @@
+﻿<div class="cell @(State.Blocked ? "blocked" : "")  @(State.Start ? "start" : "")  @(State.End ? "end" : "") @(State.Visited ? "visited" : "")  @(State.Route ? "route" : "")" @onclick="@((e) => OnClick.InvokeAsync(State))" >
+@(this.State.TentativeDistance != int.MaxValue ? this.State.TentativeDistance.ToString() : "")
+</div>
+
+@code {
+
+    [Parameter]
+    public CellState State { get; set; }
+
+    [Parameter] public EventCallback<CellState> OnClick { get; set; }
+}
+

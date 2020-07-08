@@ -1,0 +1,206 @@
+﻿@using System.Timers
+
+<div class="grid">
+    @for (int y = 0; y < Cols; y++)
+    {
+        @for (int x = 0; x < Rows; x++)
+        {
+
+            <Cell State="state[x,y]" OnClick="ClickHandler" />
+
+        }
+    }
+</div>
+
+<div class="actions">
+    <button @onclick="Reset">Reset</button>
+    <button @onclick="ToggleStart">@(this.timer.Enabled ? "Stop" : "Start")</button>
+    <button @onclick="@(async () => await AlgorithmStep())">Step</button>
+</div>
+
+@code {
+    [Parameter]
+    public int Rows { get; set; }
+
+    [Parameter]
+    public int Cols { get; set; }
+
+
+    private CellState[,] state;
+
+    private List<CellState> unvisited = new List<CellState>();
+
+    private CellState start;
+    private CellState destination;
+    private CellState current;
+
+    private Timer timer;
+
+    protected override void OnInitialized()
+    {
+        state = new CellState[Rows, Cols];
+
+        timer = new Timer();
+        timer.Interval = TimeSpan.FromMilliseconds(20).TotalMilliseconds;
+        timer.Elapsed += async (sender, args) =>
+        {
+            await AlgorithmStep();
+        };
+
+
+        for (int x = 0; x < Rows; x++)
+        {
+
+            @for (int y = 0; y < Cols; y++)
+            {
+                state[x, y] = new CellState(x, y);
+                unvisited.Add(state[x, y]);
+            }
+        }
+
+        destination = state[25, 3];
+        destination.End = true;
+
+        current = state[3, 15];
+        start = current;
+        current.Start = true;
+        current.TentativeDistance = 0;
+    }
+
+
+    void ToggleStart()
+    {
+        if (this.timer.Enabled)
+        {
+            this.timer.Stop();
+        }
+        else
+        {
+            this.timer.Start();
+        }
+    }
+
+    async Task AlgorithmStep()
+    {
+        Dijkstra();
+        //this.StateHasChanged();
+    }
+
+    void Dijkstra()
+    {
+        if (destination.Visited)
+        {
+            // solution found
+            HighLightSolution();
+            this.timer.Stop();
+            return;
+        }
+
+        if (this.current == null)
+        {
+            // no solution found
+            this.timer.Stop();
+            return;
+        }
+
+        var neightbours = GetNeighbours(this.current).Where(x => !x.Visited).ToArray();
+
+        int distanceWeight = 1;
+
+        foreach (var cell in neightbours)
+        {
+            cell.TentativeDistance = Math.Min(cell.TentativeDistance, this.current.TentativeDistance + distanceWeight);
+        }
+
+        this.VisitNode(this.current);
+
+        this.current = unvisited.OrderBy(x => x.TentativeDistance).First();
+    }
+
+    private void HighLightSolution()
+    {
+        var currentStopOnSolutionRoute = this.destination;
+
+        var route = new List<CellState>();
+        while (currentStopOnSolutionRoute != this.start)
+        {
+            var neighbour = this.GetNearestNeighbour(currentStopOnSolutionRoute);
+            route.Add(neighbour);
+            currentStopOnSolutionRoute = neighbour;
+        }
+
+        route.Reverse();
+
+        var timer = new Timer();
+        timer.Interval = TimeSpan.FromMilliseconds(10).TotalMilliseconds;
+
+        int highlightCounter = 0;
+        timer.Elapsed += (sender, args) =>
+        {
+            highlightCounter++;
+
+            if (highlightCounter > route.Count)
+            {
+                timer.Stop();
+                return;
+            }
+
+            route[highlightCounter].Route = true;
+            this.StateHasChanged();
+        };
+        timer.Start();
+    }
+
+    private CellState GetNearestNeighbour(CellState cellState)
+    {
+        return GetNeighbours(cellState).OrderBy(x => x.TentativeDistance).First();
+    }
+
+    private void VisitNode(CellState cellState)
+    {
+        cellState.Visited = true;
+        unvisited.Remove(cellState);
+    }
+
+    private CellState[] GetNeighbours(CellState cellState)
+    {
+        var neightbours = new List<CellState>();
+
+        if (cellState.Y > 0)
+        {
+            // add northern neighbour
+            neightbours.Add(this.state[cellState.X, cellState.Y - 1]);
+        }
+        if (cellState.X + 1 < this.Rows)
+        {
+            // add eastern neighbour
+            neightbours.Add(this.state[cellState.X + 1, cellState.Y]);
+        }
+        if (cellState.Y + 1 < this.Cols)
+        {
+            // add southern neighbour
+            neightbours.Add(this.state[cellState.X, cellState.Y + 1]);
+        }
+        if (cellState.X > 0)
+        {
+            // add western neighbour
+            neightbours.Add(this.state[cellState.X - 1, cellState.Y]);
+        }
+
+        return neightbours.ToArray();
+    }
+
+    void Reset()
+    {
+        this.OnInitialized();
+        this.StateHasChanged();
+    }
+
+    void ClickHandler(CellState cellState)
+    {
+        this.VisitNode(cellState);
+        cellState.Blocked = true;
+
+        this.StateHasChanged();
+    }
+}
