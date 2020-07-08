@@ -1,0 +1,44 @@
+﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+
+.main {
+    display: flex;
+    justify-content: center;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(30, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+    grid-gap: 1px;
+    background-color: black;
+}
+
+.cell {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+}
+
+    .cell.visited {
+        background-color: blue;
+    }
+
+    .cell.blocked {
+        background-color: brown;
+    }
+
+    .cell.start {
+        background-color: chartreuse;
+    }
+
+    .cell.end {
+        background-color: purple;
+    }
+
+    .cell.route {
+        background-color: yellow;
+    }
